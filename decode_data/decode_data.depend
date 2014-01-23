@@ -1,0 +1,10 @@
+# depslib dependency file v1.0
+1390428889 source:/home/bengo/Outils/SDR/decode_data/main.cpp
+	<iostream>
+	<fstream>
+	<vector>
+	<math.h>
+	<string>
+	<bitset>
+	<sstream>
+
