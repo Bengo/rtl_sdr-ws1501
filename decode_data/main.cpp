@@ -5,6 +5,7 @@
 #include <string>
 #include <bitset>
 #include <sstream>
+#include <stdlib.h>
 
 #define SETSIZE 4
 using namespace std;
@@ -12,27 +13,32 @@ using namespace std;
 ifstream::pos_type size;
 unsigned char* memblock;
 
+string enteteThermometre = "2dd4a1430";
+string enteteHumidite = "2dd4a1431";
 
-void to_hex_str(string& binary_str, ostringstream& hex_str){
-	size_t idx=0, size=binary_str.size();
+void to_hex_str(string& binary_str, ostringstream& hex_str)
+{
+    size_t idx=0, size=binary_str.size();
 
-	hex_str << hex ;
+    hex_str << hex ;
 
-	for( int i=0; i < (size/SETSIZE) ; i++, idx+=SETSIZE){
-		bitset<SETSIZE> set(binary_str.substr(idx, idx+SETSIZE));
-		hex_str << set.to_ulong();
-	}
+    for( int i=0; i < (size/SETSIZE) ; i++, idx+=SETSIZE)
+    {
+        bitset<SETSIZE> set(binary_str.substr(idx, idx+SETSIZE));
+        hex_str << set.to_ulong();
+    }
 
-	hex_str << dec << endl;
+    hex_str << dec << endl;
 }
 
 
 /**
 * On declare abitrairement que toute mesure superieure a 20 vaut '1' sinon elle vaut '0'
 **/
-void extract_data(vector<unsigned int> data){
+void extract_data(vector<unsigned int> data)
+{
 
-    unsigned int seuil = 20;
+    unsigned int seuil = 40;
     //on parcourt le message
     unsigned int i = 0;
     unsigned int frontprecedant = 0;
@@ -45,14 +51,16 @@ void extract_data(vector<unsigned int> data){
     {
         //on detecte un front montant valide cad on est a '0' et 20 '1' suivent
         bool front = true;
-        if(data[i]<seuil){
+        if(data[i]<seuil)
+        {
 
-            for(unsigned int k=0;k<20;k++)
+            for(unsigned int k=0; k<20; k++)
             {
                 if(data[i+k]>seuil)
                 {
                     front = front && true;
-                } else
+                }
+                else
                 {
                     front = front && false;
                 }
@@ -70,21 +78,25 @@ void extract_data(vector<unsigned int> data){
 
 
             //si l'ecart entre 2 front est inferieur a 58
-            if(frontactuel-frontprecedant<60){
+            if(frontactuel-frontprecedant<60)
+            {
 
                 frontprecedant = frontactuel;
                 nbfront++;
 
-                if(nbfront==8){
+                if(nbfront==8)
+                {
                     synchrodetecte = true;
                     break;
                 }
-            } else
+            }
+            else
             {
                 frontprecedant=0;
             }
             i=i+40;
-        } else
+        }
+        else
         {
             i++;
         }
@@ -96,20 +108,21 @@ void extract_data(vector<unsigned int> data){
         //cout<<"indice front synchro initial:"<<frontinitial<<" indice front synchro final:"<<frontactuel<<endl;
         //synchro detecte 10101010101010
         unsigned int dureebit=floor((frontactuel-frontinitial)/14)-1;
-        cout<<"nb points d'un bit :"<<dureebit<<endl;
+        //out<<"nb points d'un bit :"<<dureebit<<endl;
 
         //le signal commence deux bits plus loin apres '10' final de synchro
         unsigned int indicedebut = frontactuel+2*dureebit;
         unsigned int indicechangement = indicedebut;
         unsigned int indice = indicedebut;
         bool etathaut = false;
-        while(indice<data.size()){
+        while(indice<data.size())
+        {
             //on detecte un front montant
             if(!etathaut&&data[indice]>seuil)
             {
                 etathaut = true;
                 float nbbitsbas = ceil((indice-indicechangement)/dureebit);
-                for(unsigned int k = 0; k<nbbitsbas;k++)
+                for(unsigned int k = 0; k<nbbitsbas; k++)
                 {
                     messbinaire+='0';
                 }
@@ -123,7 +136,7 @@ void extract_data(vector<unsigned int> data){
             {
                 etathaut = false;
                 float nbbitshaut = ceil((indice-indicechangement)/dureebit);
-                 for(unsigned int k = 0; k<nbbitshaut;k++)
+                for(unsigned int k = 0; k<nbbitshaut; k++)
                 {
                     messbinaire+='1';
                 }
@@ -137,11 +150,24 @@ void extract_data(vector<unsigned int> data){
 
 
 
-        cout<<messbinaire<<endl;
+        //cout<<messbinaire<<endl;
         ostringstream hex_str;
         to_hex_str(messbinaire, hex_str);
-        cout << hex_str.str()<< endl;
 
+
+        if(hex_str.str().substr(0, enteteThermometre.size()) == enteteThermometre)
+        {
+            string dataTempe =  hex_str.str().substr(enteteThermometre.size()).substr(0,3);
+            double tempe = atof(dataTempe.c_str());
+            cout << "Température: " <<(tempe-400)/10<<"°C"<< endl;
+        }
+
+        if(hex_str.str().substr(0, enteteHumidite.size()) == enteteHumidite)
+        {
+            string dataHumi = hex_str.str().substr(enteteHumidite.size()).substr(1,2);
+            cout <<"Humidité: "<< dataHumi<<" %"<< endl;
+
+        }
 
     }
 
@@ -149,68 +175,71 @@ void extract_data(vector<unsigned int> data){
 
 
 
-int main () {
-  ifstream file ("/home/bengo/Outils/SDR/data/test/decode/data.raw", ios::in|ios::binary|ios::ate);
-  if (file.is_open())
-  {
-    size = file.tellg();
-    memblock = new unsigned char[size];
-    file.seekg (0, ios::beg);
-    file.read ((char*)memblock, size);
-    file.close();
-
-    //on ne garde que l'amplitude des I/Q
-    float datasize = size/2;
-    vector<unsigned int> data;
-    data.reserve(int(datasize));
-    int i = 0;
-    int q = 0;
-    for (int k=0; k<(int)size-1; k=k+2){
-        i = (int) memblock[k]-128;
-        q = (int) memblock[k+1]-128;
-        data.push_back(sqrt(i*i+q*q));
-    }
-
-    /*
-     on extrait les trains de bits:
-        si on a une moyenne de 15 sur 500 points c'est que l'on est dans la synchro
-        on parcourt 100 points par 100 points
-        la data a un longeur totale inferieure a 4500 points
-    */
-
-    unsigned int moyenne_synchro = 15;
-    unsigned int taille_synchro = 500;
-    unsigned int taille_data = 4500;
-    unsigned int taille_parcourt = 100;
-
-    unsigned l = 0;
-    while( l < data.size()-taille_data)
+int main ()
+{
+    ifstream file ("/tmp/data.raw", ios::in|ios::binary|ios::ate);
+    if (file.is_open())
     {
-        unsigned int somme = 0;
-        for(unsigned int k=0;k<taille_synchro;k++)
+        size = file.tellg();
+        memblock = new unsigned char[size];
+        file.seekg (0, ios::beg);
+        file.read ((char*)memblock, size);
+        file.close();
+
+        //on ne garde que l'amplitude des I/Q
+        float datasize = size/2;
+        vector<unsigned int> data;
+        data.reserve(int(datasize));
+        int i = 0;
+        int q = 0;
+        for (int k=0; k<(int)size-1; k=k+2)
         {
-            somme += data[l+k];
+            i = (int) memblock[k]-128;
+            q = (int) memblock[k+1]-128;
+            data.push_back(sqrt(i*i+q*q));
         }
 
-        unsigned int moyenne = somme/taille_synchro;
+        /*
+         on extrait les trains de bits:
+            si on a une moyenne de 15 sur 500 points c'est que l'on est dans la synchro
+            on parcourt 100 points par 100 points
+            la data a un longeur totale inferieure a 4500 points
+        */
 
-        if(moyenne>moyenne_synchro)
-        {
-            vector<unsigned int>::const_iterator first = data.begin() + l;
-            vector<unsigned int>::const_iterator last = data.begin() + l + taille_data;
-            vector<unsigned int> subdata(first, last);
+        unsigned int moyenne_synchro = 25;
+        unsigned int taille_synchro = 500;
+        unsigned int taille_data = 4500;
+        unsigned int taille_parcourt = 100;
 
-            extract_data(subdata);
-            l = l+taille_data;
-        } else
+        unsigned l = 0;
+        while( l < data.size()-taille_data)
         {
-            l = l+taille_parcourt;
+            unsigned int somme = 0;
+            for(unsigned int k=0; k<taille_synchro; k++)
+            {
+                somme += data[l+k];
+            }
+
+            unsigned int moyenne = somme/taille_synchro;
+
+            if(moyenne>moyenne_synchro)
+            {
+                vector<unsigned int>::const_iterator first = data.begin() + l;
+                vector<unsigned int>::const_iterator last = data.begin() + l + taille_data;
+                vector<unsigned int> subdata(first, last);
+
+                extract_data(subdata);
+                l = l+taille_data;
+            }
+            else
+            {
+                l = l+taille_parcourt;
+            }
+
+
         }
-
-
+        delete[] memblock;
     }
-    delete[] memblock;
-  }
-  else cout << "Unable to open file";
-  return 0;
+    else cout << "Unable to open file"<<endl;
+    return 0;
 }

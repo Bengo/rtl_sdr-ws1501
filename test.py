@@ -34,7 +34,7 @@ aaaa2dd4a693200030fe41fe4a
 
 """
 def main():
- fd = open('data/data1.raw', 'rb');
+ fd = open('data/data2.raw', 'rb');
 
  data_raw_IQ = numpy.fromfile(file=fd, dtype=numpy.uint8);
  fd.close();
@@ -83,8 +83,8 @@ def extract_data(data):
    elem=numpy.mean(data_lissee[i:i+mobile_size]);
    data_lissee[i]=elem;
 """
- #plt.plot(data_lissee)
- #plt.show()
+ plt.plot(data_lissee)
+ plt.show()
  seuil = 30;
 
  for i in range(0,len(data_lissee)):
