@@ -1,0 +1,11 @@
+rtl_sdr -f 868428000 -s 250000 data.raw -g 49.6 -S 
+
+
+caputre de un peu plus de 30 secondes:
+temp: 10.9°C
+hum: 97%
+Vent:
+	19 km/h wnw
+	20.5 w
+	21.6 w
+	23 w
