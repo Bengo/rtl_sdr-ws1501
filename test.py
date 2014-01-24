@@ -34,7 +34,7 @@ aaaa2dd4a693200030fe41fe4a
 
 """
 def main():
- fd = open('data.raw', 'rb');
+ fd = open('data/data1.raw', 'rb');
 
  data_raw_IQ = numpy.fromfile(file=fd, dtype=numpy.uint8);
  fd.close();
