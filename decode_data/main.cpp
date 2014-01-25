@@ -38,7 +38,7 @@ void to_hex_str(string& binary_str, ostringstream& hex_str)
 void extract_data(vector<unsigned int> data)
 {
 
-    unsigned int seuil = 40;
+    unsigned int seuil = 20;
     //on parcourt le message
     unsigned int i = 0;
     unsigned int frontprecedant = 0;
@@ -108,7 +108,7 @@ void extract_data(vector<unsigned int> data)
         //cout<<"indice front synchro initial:"<<frontinitial<<" indice front synchro final:"<<frontactuel<<endl;
         //synchro detecte 10101010101010
         unsigned int dureebit=floor((frontactuel-frontinitial)/14)-1;
-        //out<<"nb points d'un bit :"<<dureebit<<endl;
+        //cout<<"nb points d'un bit :"<<dureebit<<endl;
 
         //le signal commence deux bits plus loin apres '10' final de synchro
         unsigned int indicedebut = frontactuel+2*dureebit;
@@ -153,7 +153,7 @@ void extract_data(vector<unsigned int> data)
         //cout<<messbinaire<<endl;
         ostringstream hex_str;
         to_hex_str(messbinaire, hex_str);
-
+        //cout<<hex_str.str()<<endl;
 
         if(hex_str.str().substr(0, enteteThermometre.size()) == enteteThermometre)
         {
@@ -202,42 +202,39 @@ int main ()
         /*
          on extrait les trains de bits:
             si on a une moyenne de 15 sur 500 points c'est que l'on est dans la synchro
-            on parcourt 100 points par 100 points
             la data a un longeur totale inferieure a 4500 points
         */
-
-        unsigned int moyenne_synchro = 25;
-        unsigned int taille_synchro = 500;
-        unsigned int taille_data = 4500;
-        unsigned int taille_parcourt = 100;
+        unsigned int moyenne_seuil_synchro = 15;
+        unsigned int nb_ech_synchro = 500;
+        unsigned int nb_ech_message = 4500;
 
         unsigned l = 0;
-        while( l < data.size()-taille_data)
-        {
+        while(l<datasize-nb_ech_message){
             unsigned int somme = 0;
-            for(unsigned int k=0; k<taille_synchro; k++)
+            for(unsigned int k=0; k<nb_ech_synchro; k++)
             {
                 somme += data[l+k];
             }
+             unsigned int moyenne = somme/nb_ech_synchro;
 
-            unsigned int moyenne = somme/taille_synchro;
-
-            if(moyenne>moyenne_synchro)
+            if(moyenne>moyenne_seuil_synchro)
             {
                 vector<unsigned int>::const_iterator first = data.begin() + l;
-                vector<unsigned int>::const_iterator last = data.begin() + l + taille_data;
+                vector<unsigned int>::const_iterator last = data.begin() + l + nb_ech_message;
                 vector<unsigned int> subdata(first, last);
 
                 extract_data(subdata);
-                l = l+taille_data;
+                l = l+nb_ech_message;
             }
             else
             {
-                l = l+taille_parcourt;
+                l = l+50;
             }
-
-
         }
+
+
+
+
         delete[] memblock;
     }
     else cout << "Unable to open file"<<endl;

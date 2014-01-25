@@ -34,7 +34,7 @@ aaaa2dd4a693200030fe41fe4a
 
 """
 def main():
- fd = open('data/data2.raw', 'rb');
+ fd = open('/tmp/data.raw', 'rb');
 
  data_raw_IQ = numpy.fromfile(file=fd, dtype=numpy.uint8);
  fd.close();
@@ -42,7 +42,7 @@ def main():
 
 
  data_IQ = numpy.array(data_raw_IQ,numpy.int16)-offset;
-
+ #data = numpy.absolute(numpy.array(data_raw_IQ,numpy.int16)-offset);
  data = [];
  #on garde l'amplitude des I/Q sqrt(IxI+QxQ)
  for i in range(0,int(len(data_IQ)/2),2):
@@ -50,8 +50,8 @@ def main():
 
  #numpy.array(data,numpy.int8).tofile("dataR.raw", sep="", format="%i")
  
- #plt.plot(data)
- #plt.show()
+ plt.plot(data)
+ plt.show()
  #print len(data)
  #on extrait les trains de bits
  #la synchro a environ une moyenne de  30 sur 500 points
