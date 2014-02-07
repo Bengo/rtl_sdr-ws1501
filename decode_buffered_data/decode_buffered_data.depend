@@ -1,0 +1,13 @@
+# depslib dependency file v1.0
+1391722835 source:/home/bengo/Outils/SDR/rtl_sdr-ws1501/decode_buffered_data/main.cpp
+	<iostream>
+	<rtl-sdr.h>
+	<stdlib.h>
+	<stdio.h>
+	<signal.h>
+	<vector>
+	<math.h>
+	<string>
+	<bitset>
+	<sstream>
+

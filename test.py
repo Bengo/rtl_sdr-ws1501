@@ -34,7 +34,7 @@ aaaa2dd4a693200030fe41fe4a
 
 """
 def main():
- fd = open('/tmp/data.raw', 'rb');
+ fd = open('/tmp/data.rtl', 'rb');
 
  data_raw_IQ = numpy.fromfile(file=fd, dtype=numpy.uint8);
  fd.close();
@@ -56,7 +56,7 @@ def main():
  #on extrait les trains de bits
  #la synchro a environ une moyenne de  30 sur 500 points
  #on parcourt 50 points par 50 points
- moyenne_synchro = 15
+ moyenne_synchro = 3
  taille_synchro = 500
  taille_data = 4500
  taille_parcourt = 100
@@ -85,7 +85,7 @@ def extract_data(data):
 """
  plt.plot(data_lissee)
  plt.show()
- seuil = 30;
+ seuil = 3.16;
 
  for i in range(0,len(data_lissee)):
   if(data_lissee[i]<seuil):
