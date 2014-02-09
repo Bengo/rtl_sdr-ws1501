@@ -45,7 +45,7 @@ def main():
  #data = numpy.absolute(numpy.array(data_raw_IQ,numpy.int16)-offset);
  data = [];
  #on garde l'amplitude des I/Q sqrt(IxI+QxQ)
- for i in range(0,int(len(data_IQ)/2),2):
+ for i in range(0,int(len(data_IQ)-1),2):
   data.append(math.sqrt(data_IQ[i]*data_IQ[i]+data_IQ[i+1]*data_IQ[i+1]))
 
  #numpy.array(data,numpy.int8).tofile("dataR.raw", sep="", format="%i")
@@ -56,7 +56,7 @@ def main():
  #on extrait les trains de bits
  #la synchro a environ une moyenne de  30 sur 500 points
  #on parcourt 50 points par 50 points
- moyenne_synchro = 3
+ moyenne_synchro = 50
  taille_synchro = 500
  taille_data = 4500
  taille_parcourt = 100
@@ -85,7 +85,7 @@ def extract_data(data):
 """
  plt.plot(data_lissee)
  plt.show()
- seuil = 3.16;
+ seuil = 70;
 
  for i in range(0,len(data_lissee)):
   if(data_lissee[i]<seuil):
