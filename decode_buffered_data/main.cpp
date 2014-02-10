@@ -35,16 +35,16 @@ string synchroAnemo = "20003";
 bool isTempFound = false;
 bool isHumidityFound = false;
 bool isWindFound = false;
-vector<long> temperatures;
+vector<float> temperatures;
 vector<unsigned long> humidites;
-vector<unsigned long> vitessesVent;
+vector<float> vitessesVent;
 vector<char> directionsVent;
 
 static void sighandler(int signum)
 {
-	fprintf(stderr, "Signal caught, exiting!\n");
-	do_exit = 1;
-	rtlsdr_cancel_async(dev);
+    fprintf(stderr, "Signal caught, exiting!\n");
+    do_exit = 1;
+    rtlsdr_cancel_async(dev);
 }
 
 static void to_hex_str(string& binary_str, ostringstream& hex_str)
@@ -53,7 +53,7 @@ static void to_hex_str(string& binary_str, ostringstream& hex_str)
 
     hex_str << hex ;
 
-    for( int i=0; i < (size/SETSIZE) ; i++, idx+=SETSIZE)
+    for( unsigned int i=0; i < (size/SETSIZE) ; i++, idx+=SETSIZE)
     {
         bitset<SETSIZE> set(binary_str.substr(idx, idx+SETSIZE));
         hex_str << set.to_ulong();
@@ -203,7 +203,8 @@ static void extract_data(vector<unsigned int> data)
             temperatures.push_back((tempe-400)/10);
             isTempFound = true;
 
-        } else if(hex_str.str().substr(0, enteteHumidite.size()) == enteteHumidite)
+        }
+        else if(hex_str.str().substr(0, enteteHumidite.size()) == enteteHumidite)
         {
             string dataHumi = hex_str.str().substr(enteteHumidite.size()).substr(1,2);
 
@@ -213,14 +214,16 @@ static void extract_data(vector<unsigned int> data)
         }
 
         //detection vent direction et intensite
-        if(hex_str.str().find(synchroAnemo) != string::npos){
+        if(hex_str.str().find(synchroAnemo) != string::npos)
+        {
             size_t debutSynchro = hex_str.str().find(synchroAnemo);
             //direction
             size_t indiceDirection = debutSynchro + synchroAnemo.size();
 //            string direction = directions[hex_str.str().at(indiceDirection)];
 //            cout<<direction<<endl;
             //intensite
-            if(hex_str.str().size()>indiceDirection+2){
+            if(hex_str.str().size()>indiceDirection+2)
+            {
                 string intensiteHexa = hex_str.str().substr(indiceDirection+1,2);
                 unsigned long intensite;
                 std::stringstream ss;
@@ -266,14 +269,16 @@ static void decodeWS1501(unsigned char *buf, uint32_t len)
 
     unsigned l = 0;
     unsigned int max_moyenne = 0;
-    while(l<datasize-nb_ech_message){
+    while(l<datasize-nb_ech_message)
+    {
         unsigned int somme = 0;
         for(unsigned int k=0; k<nb_ech_synchro; k++)
         {
             somme += data[l+k];
         }
-         unsigned int moyenne = somme/nb_ech_synchro;
-        if(moyenne>max_moyenne){
+        unsigned int moyenne = somme/nb_ech_synchro;
+        if(moyenne>max_moyenne)
+        {
             max_moyenne = moyenne;
         }
 
@@ -305,54 +310,58 @@ static void decodeWS1501(unsigned char *buf, uint32_t len)
 
 static void rtlsdr_callback(unsigned char *buf, uint32_t len, void *ctx)
 {
-static map<char, string> directions;
-directions['0'] = "N";
-directions['1'] = "NNE";
-directions['2'] = "NE";
-directions['3'] = "ENE";
-directions['4'] = "E";
-directions['5'] = "ESE";
-directions['6'] = "SE";
-directions['7'] = "SSE";
-directions['8'] = "S";
-directions['9'] = "SSW";
-directions['a'] = "SW";
-directions['b'] = "WSW";
-directions['c'] = "W";
-directions['d'] = "WNW";
-directions['e'] = "NW";
-directions['f'] = "NNW";
+    static map<char, string> directions;
+    directions['0'] = "N";
+    directions['1'] = "NNE";
+    directions['2'] = "NE";
+    directions['3'] = "ENE";
+    directions['4'] = "E";
+    directions['5'] = "ESE";
+    directions['6'] = "SE";
+    directions['7'] = "SSE";
+    directions['8'] = "S";
+    directions['9'] = "SSW";
+    directions['a'] = "SW";
+    directions['b'] = "WSW";
+    directions['c'] = "W";
+    directions['d'] = "WNW";
+    directions['e'] = "NW";
+    directions['f'] = "NNW";
 
 
-	if (ctx) {
-		if (do_exit)
-			return;
+    if (ctx)
+    {
+        if (do_exit)
+            return;
 
 
-		if ((bytes_to_read > 0) && (bytes_to_read < len)) {
-			len = bytes_to_read;
-			do_exit = 1;
-			rtlsdr_cancel_async(dev);
-		}
+        if ((bytes_to_read > 0) && (bytes_to_read < len))
+        {
+            len = bytes_to_read;
+            do_exit = 1;
+            rtlsdr_cancel_async(dev);
+        }
 
-		if (fwrite(buf, 1, len, (FILE*)ctx) != len) {
-			fprintf(stderr, "Short write, samples lost, exiting!\n");
-			rtlsdr_cancel_async(dev);
-		}
+        if (fwrite(buf, 1, len, (FILE*)ctx) != len)
+        {
+            fprintf(stderr, "Short write, samples lost, exiting!\n");
+            rtlsdr_cancel_async(dev);
+        }
 
         decodeWS1501(buf, len);
 
-		if (bytes_to_read > 0)
-			bytes_to_read -= len;
+        if (bytes_to_read > 0)
+            bytes_to_read -= len;
 
-        if(isHumidityFound && isWindFound && isTempFound){
+        if(isHumidityFound && isWindFound && isTempFound)
+        {
             do_exit = 1;
-			rtlsdr_cancel_async(dev);
+            rtlsdr_cancel_async(dev);
             //Temperature moyenne
-            unsigned long tempeMoyenne = std::accumulate(temperatures.begin(), temperatures.end(), 0 )/ temperatures.size();
+            float tempeMoyenne = std::accumulate(temperatures.begin(), temperatures.end(), 0.0 )/ temperatures.size();
             unsigned long humiditeMoyenne = accumulate(humidites.begin(), humidites.end(), 0 )/ humidites.size();
             char directionMoyenne = accumulate(directionsVent.begin(), directionsVent.end(), 0 )/ directionsVent.size();
-            unsigned long ventMoyen = accumulate(vitessesVent.begin(), vitessesVent.end(), 0 )/ vitessesVent.size();
+            float ventMoyen = accumulate(vitessesVent.begin(), vitessesVent.end(), 0.0 )/ vitessesVent.size();
             cout<<"   Mesures realisees   "<<endl;
             cout<<"-----------------------"<<endl;
             cout<<"Vent :"<<ventMoyen<<" km/h "<<directions[directionMoyenne]<<endl;
@@ -360,15 +369,11 @@ directions['f'] = "NNW";
             cout<<"Humidite : "<<humiditeMoyenne<<"%"<<endl;
 
         }
-	}
+    }
 }
 
 int main()
 {
-
-
-
-
     struct sigaction sigact;
 
     int r =0;
@@ -380,32 +385,33 @@ int main()
     FILE * file;
     buffer = (uint8_t *)malloc(out_block_size * sizeof(uint8_t));
 
-	r = rtlsdr_open(&dev, 0);
-	if (r < 0) {
-		fprintf(stderr, "Failed to open rtlsdr device.\n");
-		exit(1);
-	}
+    r = rtlsdr_open(&dev, 0);
+    if (r < 0)
+    {
+        fprintf(stderr, "Failed to open rtlsdr device.\n");
+        exit(1);
+    }
 
 
-	sigact.sa_handler = sighandler;
-	sigemptyset(&sigact.sa_mask);
-	sigact.sa_flags = 0;
-	sigaction(SIGINT, &sigact, NULL);
-	sigaction(SIGTERM, &sigact, NULL);
-	sigaction(SIGQUIT, &sigact, NULL);
-	sigaction(SIGPIPE, &sigact, NULL);
+    sigact.sa_handler = sighandler;
+    sigemptyset(&sigact.sa_mask);
+    sigact.sa_flags = 0;
+    sigaction(SIGINT, &sigact, NULL);
+    sigaction(SIGTERM, &sigact, NULL);
+    sigaction(SIGQUIT, &sigact, NULL);
+    sigaction(SIGPIPE, &sigact, NULL);
 
-	/* Set the sample rate */
-	rtlsdr_set_sample_rate(dev, samp_rate);
+    /* Set the sample rate */
+    rtlsdr_set_sample_rate(dev, samp_rate);
 
-	/* Set the frequency */
+    /* Set the frequency */
     r = rtlsdr_set_center_freq(dev, frequency);
     if (r < 0)
-                fprintf(stderr, "WARNING: Failed to set center freq.\n");
-            else
-                fprintf(stderr, "Tuned to %u Hz.\n", rtlsdr_get_center_freq(dev));
+        fprintf(stderr, "WARNING: Failed to set center freq.\n");
+    else
+        fprintf(stderr, "Tuned to %u Hz.\n", rtlsdr_get_center_freq(dev));
     /* Set the gain*/
-	rtlsdr_set_tuner_gain_mode(dev, 0);
+    rtlsdr_set_tuner_gain_mode(dev, 0);
 
 //    r = rtlsdr_set_tuner_gain(dev, gain);
 //        if (r < 0)
@@ -413,7 +419,7 @@ int main()
 //        else
 //            fprintf(stderr, "Tuner gain set to %f dB.\n", gain/10.0);
 
-	/* Reset endpoint before we start reading from it (mandatory) */
+    /* Reset endpoint before we start reading from it (mandatory) */
     rtlsdr_reset_buffer(dev);
 
 
@@ -423,11 +429,11 @@ int main()
     fprintf(stderr, "Reading samples in async mode...\n");
     //on ne sauvegarde pas dans un fichier d'ou (void *)0 sinon (void *)file
     r = rtlsdr_read_async(dev, rtlsdr_callback, (void *)file,
-				      DEFAULT_ASYNC_BUF_NUMBER, out_block_size);
+                          DEFAULT_ASYNC_BUF_NUMBER, out_block_size);
 
     fclose(file);
-	rtlsdr_close(dev);
-	free (buffer);
+    rtlsdr_close(dev);
+    free (buffer);
 
     return 0;
 }
